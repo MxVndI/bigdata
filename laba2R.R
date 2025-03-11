@@ -38,12 +38,19 @@ print(data_with_na_filled)
 filtered_data <- data[data$`Разнообразие блюд` > 8, ] 
 print(filtered_data) 
 
-barplot(table(data$`Общее впечатление`),  
-        main = "Распределение общего впечатления",  
-        xlab = "Оценка",  
-        ylab = "Количество участников") 
 
-
+mean_ratings <- colMeans(data[,-c(1,2)], na.rm = TRUE)
+ratings_df <- data.frame(
+  questions = names(mean_ratings),
+  meanRating = mean_ratings
+)
+barplot(ratings_df$meanRating,  
+        names.arg = ratings_df$questions,  
+        main = "Распределение средней оценки",  
+        ylab = "Средний рейтинг",
+        las = 3, 
+        col = "lightblue", 
+        border = "blue")
 
 #2.2
 library(readxl) 
@@ -128,3 +135,10 @@ print(data_xlsx)
 subset_data <- data_xlsx[data_xlsx$`Общее впечатление` > 7, ] 
 print("Подмножество данных (оценка > 7):") 
 print(subset_data) 
+
+
+
+#overall_mean <- mean(ratings_df$meanRating)
+#abline(h = overall_mean, col = "red", lwd = 2, lty = 2)
+#legend("topright", legend = paste("Общее среднее:", round(overall_mean, 2)), 
+       col = "red", lty = 2, lwd = 2)
