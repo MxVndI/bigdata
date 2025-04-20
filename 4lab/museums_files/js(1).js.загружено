@@ -1,0 +1,153 @@
+(function() {
+    'use strict';
+
+    var PIXEL_ENDPOINT = "https://antifraud.servicepipe.ru/pixel/botchecks.gif";
+
+    function generateVisitorId() {
+        var timestamp = Date.now();
+        var randomNumber = Math.floor(Math.random() * 1e9);
+        return randomNumber + "" + Math.floor(timestamp / 1000);
+    }
+
+    function generateSessionId() {
+        var timestamp = Math.floor(Date.now() / 1000);
+        var randomNumber = Math.floor(Math.random() * 1e9);
+        return timestamp + "" + randomNumber;
+    }
+
+    function getCookie(name) {
+        var pattern = new RegExp("(?:^|; )" + name + "=([^;]*)");
+        var matches = document.cookie.match(pattern);
+        return matches ? decodeURIComponent(matches[1]) : null;
+    }
+
+    function setCookie(name, value, days) {
+        var expires = "";
+        if (days && days > 0) {
+            var date = new Date();
+            date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+            expires = "; expires=" + date.toUTCString();
+        } else if (days < 0) {
+            // Удаляем куку
+            expires = "; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+        }
+        document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/";
+    }
+
+    function getOrSetVisitorId() {
+        var visitorId = getCookie("b_id");
+        if (!visitorId) {
+            visitorId = generateVisitorId();
+            setCookie("b_id", visitorId, 365);
+        }
+        return visitorId;
+    }
+
+
+    function determineReferrer() {
+        var newRef = "";
+        if (document.referrer) {
+            try {
+                var refUrl = new URL(document.referrer);
+                newRef = (refUrl.hostname === window.location.hostname) ? "internal" : document.referrer;
+            } catch(e) {
+                newRef = document.referrer;
+            }
+        } else {
+            newRef = "direct";
+        }
+        return newRef;
+    }
+
+    function getOrSetSessionId() {
+        var sessionId = getCookie("b_viz");
+        var lastActivity = getCookie("b_viz_last");
+        var now = Date.now();
+        var sessionTimeout = 30 * 60 * 1000; // 30 минут
+
+        if (sessionId && lastActivity) {
+            if (now - parseInt(lastActivity, 10) > sessionTimeout) {
+                
+                sessionId = generateSessionId();
+                setCookie("b_viz", sessionId, 0);
+                
+                var newRef = determineReferrer();
+                setCookie("b_ref", newRef, 0);
+            }
+        } else {
+            sessionId = generateSessionId();
+            setCookie("b_viz", sessionId, 0);
+            var newRef = determineReferrer();
+            setCookie("b_ref", newRef, 0);
+        }
+        
+        setCookie("b_viz_last", now, 0);
+        return sessionId;
+    }
+
+    
+    function getOrSetReferrer() {
+        return getCookie("b_ref") || "direct";
+    }
+
+    
+    function getUtmParams() {
+        var params = new URLSearchParams(window.location.search);
+        var utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
+        var utmData = {};
+        for (var i = 0; i < utmKeys.length; i++) {
+            var val = params.get(utmKeys[i]);
+            if (val) {
+                utmData[utmKeys[i]] = val;
+            }
+        }
+        return utmData;
+    }
+
+    function toQueryString(obj) {
+        var entries = [];
+        for (var key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                entries.push(key + "=" + encodeURIComponent(obj[key]));
+            }
+        }
+        return entries.join("&");
+    }
+
+    function sendPixel(data) {
+        var queryString = toQueryString(data);
+        var url = PIXEL_ENDPOINT + "?" + queryString;
+        var img = new Image();
+        img.src = url;
+    }
+
+    function collectData() {
+        var visitorId = getOrSetVisitorId();
+        var sessionId = getOrSetSessionId();
+        var utmParams = getUtmParams();
+
+        var data = {
+            b_id: visitorId,
+            b_viz: sessionId,
+            referrer: getOrSetReferrer()
+        };
+
+        for (var key in utmParams) {
+            if (utmParams.hasOwnProperty(key)) {
+                data[key] = utmParams[key];
+            }
+        }
+        return data;
+    }
+
+    function init() {
+        var data = collectData();
+        sendPixel(data);
+    }
+
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        setTimeout(init, 1);
+    } else {
+        document.addEventListener("DOMContentLoaded", init);
+    }
+})();

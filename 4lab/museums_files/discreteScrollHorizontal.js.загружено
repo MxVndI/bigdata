@@ -1,0 +1,154 @@
+/**
+ * jQuery плагин discreteScrollHorizontal
+ * @version 1.1.0
+ * @author Arnowt
+ * @author Dmitry A Rud
+ *
+ * Настройки
+ * scrollWrapper    - обертка в которой происходит скролл(CSS селектор), ищет внутри контейнера
+ * listItems        - вложенные элементы которые будем листать(CSS селектор), ищет внутри контейнера (важно!: у родителя должно быть position: relative)
+ * dots             - родительский контейнер точек-индикаторов элементов листалки (CSS селектор), ищет внутри контейнера
+ * previousButton   - кнопка скрол влево (CSS селектор), ищет внутри контейнера
+ * nextButton       - кнопка скрол вправо (CSS селектор), ищет внутри контейнера
+ * time             - время анимации одного шага (150)
+ * jump             - по окончании прокрутки делать прыжок в начало/конец (false)
+ * jumpTime         - время анимации прыжка (150)
+ */
+(function ($) {
+    $.fn.discreteScrollHorizontal = function (settings) {
+        settings = $.extend({
+                                'time': 150,
+                                'jumpTime': 150,
+                                'jump': false
+                            }, settings);
+
+        var _this = this.find(settings['scrollWrapper']).eq(0);
+        var pButton = this.find(settings['previousButton']).eq(0);
+        var nButton = this.find(settings['nextButton']).eq(0);
+        var listItems = this.find(settings['listItems']);
+        var listItemsReverse = listItems.slice().reverse();
+        var tap = false, touch = false, scrollRun = false, timerId = 0, shiftTap = true;
+        var scrollDirection, scroll = 0, prevScroll = 0, maxWidth = 0, oldCurrItem = 0;
+
+        var listDots = this.find(settings['dots']), dotClass = '';
+
+        if (listDots.length > 0) {
+            dotClass = settings['dots'].slice(1);
+            for (var i = 0; i < listItems.length; i ++) {
+                listDots.append('<li class="' + dotClass + '-item"><span></span></li>');
+            }
+            $('.' + dotClass + '-item:first').addClass(dotClass + '-item--active');
+        }
+
+        var setActiveDot = function (currItem) {
+            if (listDots.length > 0) {
+                listDots.children('.' + dotClass + '-item--active').removeClass(dotClass + '-item--active');
+                listDots.children(':eq(' + currItem + ')').addClass(dotClass + '-item--active');
+            }
+        };
+
+        var getCurrItem = function (direction) {
+            var currItem = -1;
+            if (direction === 1) {
+                listItems.each(function (key, item) {
+                    if (scroll <= $(item).position().left + $(item).outerWidth(true) / 4) {
+                        currItem = key;
+                        return false;
+                    }
+                });
+            }
+            if (direction === -1) {
+                listItemsReverse.each(function (key, item) {
+                    if (scroll + _this.width() >= $(item).position().left + $(item).outerWidth(true) / 4 * 3) {
+                        currItem = listItems.length - key - 1;
+                        return false;
+                    }
+                });
+            }
+            if (currItem < 0) return oldCurrItem;
+            oldCurrItem = currItem;
+            return currItem;
+        };
+
+        var inactiveButton = function (currItem) {
+            if (!settings['jump'])
+                if (currItem > 0 && currItem < listItems.length - 1) {
+                    $(pButton).removeClass('inactive');
+                    $(nButton).removeClass('inactive');
+                } else if (currItem === 0) {
+                    $(pButton).addClass('inactive');
+                    $(nButton).removeClass('inactive');
+                } else {
+                    $(pButton).removeClass('inactive');
+                    $(nButton).addClass('inactive');
+                }
+        };
+
+        $(window).resize(function () {
+            maxWidth = -_this.width();
+            listItems.each(function (key, item) {
+                maxWidth += $(item).outerWidth(true);
+            });
+            maxWidth = Math.floor(maxWidth);
+        });
+        $(window).resize();
+
+        $(pButton).click(function () {
+            tap = true;
+            var timeAnimate = settings['time'];
+            var currItem = getCurrItem(-1);
+            if (shiftTap) --currItem;
+
+            if (currItem < 0 || scroll <= 0) {
+                if (settings['jump']) {
+                    currItem = listItems.length - 1;
+                    timeAnimate = settings['jumpTime'];
+                } else currItem = 0;
+            }
+            inactiveButton(currItem);
+            setActiveDot(currItem);
+            var left = listItems.eq(currItem).position().left;
+            var delta = listItems.eq(currItem).parent().innerWidth() - listItems.eq(currItem).outerWidth(true);//При клике в право элемент будет прижат с права
+            _this.animate({scrollLeft: left - delta}, timeAnimate, function () {
+                setTimeout(function () {
+                    $(pButton).blur();
+                    tap = false
+                }, 50)
+            });
+        });
+        $(nButton).click(function () {
+            tap = true;
+            var timeAnimate = settings['time'];
+            var currItem = getCurrItem(1);
+            if (shiftTap) ++currItem;
+            if (currItem >= listItems.length || scroll >= maxWidth) {
+                if (settings['jump']) {
+                    currItem = 0;
+                    timeAnimate = settings['jumpTime'];
+                } else currItem = listItems.length - 1;
+            }
+
+            inactiveButton(currItem);
+            setActiveDot(currItem);
+            var left = listItems.eq(currItem).position().left;
+            _this.animate({scrollLeft: left}, timeAnimate, function () {
+                setTimeout(function () {
+                    $(nButton).blur();
+                    tap = false
+                }, 50)
+            });
+        });
+
+        _this.scroll(function () {
+            if (timerId) clearTimeout(timerId);
+            scrollDirection = 0;
+            scroll = _this.scrollLeft();
+
+            if (prevScroll < scroll) scrollDirection = 1;
+            if (prevScroll > scroll) scrollDirection = -1;
+            prevScroll = scroll;
+        });
+
+        return this;
+    };
+})(jQuery);

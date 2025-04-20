@@ -1,0 +1,9 @@
+var sn_counters = {};
+sn_counters.fb = "71&#8201;507";
+sn_counters.instagram = "29&#8201;062";
+sn_counters.zen = "155&#8201;500";
+sn_counters.twitter = "6&#8201;821";
+sn_counters.vkontakte = "142&#8201;232";
+sn_counters.telegram = "6&#8201;526";
+sn_counters.youtube = "10&#8201;200";
+sn_counters.odnoklassniki = "2&#8201;868";

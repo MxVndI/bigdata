@@ -1,0 +1,10 @@
+
+$('#fishki').discreteScrollHorizontal({
+scrollWrapper: '.bottom-fishki__container',
+listItems: '.bottom-fishki__item',
+previousButton: '.bottom-fishki__left',
+nextButton: '.bottom-fishki__right',
+jump: true,
+});
+
+console.log("Gen:21-04-25 21:42:57");
