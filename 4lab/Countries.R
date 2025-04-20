@@ -70,4 +70,8 @@ for (index in index_list) {
           type = "o", col = colors[i], lwd = 2)
   }
   legend("topright", legend = target_countries, col = colors, lwd = 2, bty = "n")
+  
+  cat("Нажмите Enter, чтобы перейти к следующему графику...\n")
+  readline()
 }
+
