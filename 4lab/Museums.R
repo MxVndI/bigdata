@@ -54,5 +54,5 @@ parse_museum_data <- function(file_path) {
   return(result)
 }
 
-museum_df <- parse_museum_data("C:/Users/LesunVo/Desktop/bigdata/4lab/museums.html")
-head(museum_df)
+museum_df <- parse_museum_data("C:/Users/Vova/Desktop/Универ/BigData/bigdata/4lab/museums.html")
+print(museum_df)

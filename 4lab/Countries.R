@@ -1,5 +1,4 @@
 library(rvest)
-
 target_countries <- c("Russia", "Germany", "Sweden", "France", "Finland")
 years <- 2014:2021
 required_columns <- c("Country", "Purchasing_Power_Index", "Safety_Index", 
@@ -71,7 +70,7 @@ for (index in index_list) {
   }
   legend("topright", legend = target_countries, col = colors, lwd = 2, bty = "n")
   
-  cat("Нажмите Enter, чтобы перейти к следующему графику...\n")
+  print("Нажмите Enter, чтобы перейти к следующему графику...")
   readline()
 }
 

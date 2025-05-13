@@ -6,7 +6,7 @@ library(parameters)
 library(mclust)
 library(easystats)
 
-data <- read.table("C:/Users/LesunVo/Desktop/bigdata/5lab/03_French Food/French Food Data_R.dat", header = TRUE)
+data <- read.table("C:/Users/Vova/Desktop/Универ/BigData/bigdata/5lab/03_French Food/French Food Data_R.dat", header = TRUE)
 
 # Проверяем структуру
 str(data)
@@ -27,20 +27,24 @@ fviz_nbclust(scaled_ffd, kmeans, method = "wss") + ggtitle("Метод локт�
 
 # Метод силуэта
 fviz_nbclust(scaled_ffd, kmeans, method = "silhouette") + ggtitle("Метод силуэта")
-optimal_k = 3
+
 #Статистика разрыва
 gap_stat <- clusGap(scaled_ffd, FUN = kmeans, nstart = 25, K.max = 5, B = 50)
 fviz_gap_stat(gap_stat) + ggtitle("Статистика разрыва")
 
 #Метод консенсуса
-nc <- NbClust(data = scaled_ffd, distance = "euclidean",
-              min.nc = 2, max.nc = 5,
-              method = "kmeans", index = "all")
-table(nc$Best.nc[1, ])
+n_clust <- n_clusters(french_food_data,
+                      package = c("NbClust", "mclust", "factoextra"),
+                      standardize = FALSE)
+n_clust
+plot(n_clust)
+
+optimal_k = 2
 
 #Дендрограмма
 d <- dist(scaled_ffd, method = "euclidean")
 hc <- hclust(d, method = "ward.D2")
+hc$labels <- data$type
 plot(hc, main = "Дендрограмма", xlab = "Еда")
 rect.hclust(hc, k = optimal_k, border = 2:optimal_k+1)
 
